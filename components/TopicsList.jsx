@@ -9,38 +9,48 @@ const getTopics = async () => {
     });
 
     if (!res.ok) {
-      throw new Error("Failed to fetch topics");
+      throw new Error(`Failed to fetch topics: ${res.statusText}`);
     }
 
-    return res.json();
+    const data = await res.json();
+    return data.topics || [];
   } catch (error) {
-    console.log("Error loading topics: ", error);
+    console.error("Error loading topics: ", error);
+    throw error;
   }
 };
 
-export default async function TopicsList() {
-  const { topics } = await getTopics();
-
-  return (
-    <>
-      {topics.map((t) => (
-        <div
-          key={t._id}
-          className="p-4 border border-gray-500 my-3 flex justify-between gap-5 items-start bg-blue-100 rounded-md"
-        >
-          <div>
-            <h2 className="font-bold text-2xl text-indigo-700">{t.title}</h2>
-            <div className="text-gray-600 italic">{t.description}</div>
-          </div>
-
-          <div className="flex gap-2">
-            <RemoveBtn id={t._id} />
-            <Link href={`/editTopic/${t._id}`}>
-              <HiPencilAlt size={24} className="text-green-600" />
-            </Link>
-          </div>
+const TopicsList = ({ topics = [] }) => (
+  <>
+    {topics.map((t) => (
+      <div
+        key={t._id}
+        className="p-4 border border-gray-500 my-3 flex justify-between gap-5 items-start bg-blue-100 rounded-md"
+      >
+        <div>
+          <h2 className="font-bold text-2xl text-indigo-700">{t.title}</h2>
+          <div className="text-gray-600 italic">{t.description}</div>
         </div>
-      ))}
-    </>
-  );
+
+        <div className="flex gap-2">
+          <RemoveBtn id={t._id} />
+          <Link href={`/editTopic/${t._id}`}>
+            <HiPencilAlt size={24} className="text-green-600" />
+          </Link>
+        </div>
+      </div>
+    ))}
+  </>
+);
+
+export async function getServerSideProps() {
+  try {
+    const topics = await getTopics();
+    return { props: { topics } };
+  } catch (error) {
+    console.error("Error fetching topics:", error);
+    return { props: { topics: [] } };
+  }
 }
+
+export default TopicsList;
